@@ -153,7 +153,7 @@ func (f *machoFile) pcln_scan() (candidates <-chan PclntabCandidate, err error) 
 	send_patched_magic_candidates := func(candidate *PclntabCandidate) {
 		has_some_valid_magic := false
 		for _, magic := range append(pclntab_sigs_le, pclntab_sigs_be...) {
-			if bytes.Equal(candidate.Pclntab, magic) {
+			if bytes.HasPrefix(candidate.Pclntab, magic) {
 				has_some_valid_magic = true
 				break
 			}
@@ -418,4 +418,43 @@ func (f *machoFile) loadAddress() (uint64, error) {
 
 func (f *machoFile) dwarf() (*dwarf.Data, error) {
 	return f.macho.DWARF()
+}
+
+// iterateSections calls the provided function for each section.
+// This avoids loading all section data into memory at once.
+func (f *machoFile) iterateSections(fn func(Section) error) error {
+	for _, sec := range f.macho.Sections {
+		data, err := sec.Data()
+		if err != nil {
+			// Skip sections we can't read
+			continue
+		}
+		section := Section{
+			Name: sec.Name,
+			Addr: sec.Addr,
+			Data: data,
+		}
+		if err := fn(section); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// is64Bit returns true if this is a 64-bit Mach-O binary.
+// Go's debug/macho package represents CPU type directly on the File struct.
+func (f *machoFile) is64Bit() bool {
+	switch f.macho.Cpu {
+	case macho.CpuAmd64, macho.CpuArm64:
+		return true
+	default:
+		return false // CpuI386, CpuArm, CpuPpc = 32-bit
+	}
+}
+
+// isLittleEndian returns true if this Mach-O binary is little-endian.
+// Modern Macs (x86-64, ARM64) are little-endian.
+// Old PowerPC Macs were big-endian.
+func (f *machoFile) isLittleEndian() bool {
+	return f.macho.ByteOrder == binary.LittleEndian
 }
