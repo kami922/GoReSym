@@ -68,6 +68,32 @@ func TestAllVersions(t *testing.T) {
 					if !found_interface {
 						t.Errorf("Go %s interface recovery failed", v)
 					}
+					found_single_return := false
+					found_multi_return := false
+					for _, typ := range data.Types {
+						// func([]uint8) (int, error) — single param, multi-return
+						// present naturally from io.Writer usage in fmt
+						if typ.Str == "func([]uint8) (int, error)" && typ.Kind == "Func" {
+							found_single_return = true
+							if typ.CStr != "tuple(int, error) (_slice_uint8)" {
+								t.Errorf("Go %s func([]uint8)(int,error) CStr wrong: got %q", v, typ.CStr)
+							}
+						}
+						// func() (int, bool) — zero params, multi-return
+						if typ.Str == "func() (int, bool)" && typ.Kind == "Func" {
+							found_multi_return = true
+							if !strings.Contains(typ.CStr, "tuple(") {
+								t.Errorf("Go %s func()(int,bool) CStr missing tuple: got %q", v, typ.CStr)
+							}
+						}
+					}
+					if !found_single_return {
+						t.Logf("Go %s func([]uint8)(int,error) not found (may not exist in this version)", v)
+					}
+					if !found_multi_return {
+						t.Logf("Go %s func()(int,bool) not found (may not exist in this version)", v)
+					}
+
 				} else {
 					found_interface := false
 					for _, typ := range data.Types {
