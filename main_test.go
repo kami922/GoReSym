@@ -90,13 +90,19 @@ func TestAllVersions(t *testing.T) {
 								t.Errorf("Go %s func()(int,bool) CStr missing tuple: got %q", v, typ.CStr)
 							}
 						}
-						// unsafe.Pointer param — catches breakage in unsafe type reconstruction
-						if !found_unsafe_ptr && strings.Contains(typ.CStr, "unsafe_Pointer") {
+						// func(unsafe.Pointer, unsafe.Pointer) bool — complete signature check
+						if typ.Str == "func(unsafe.Pointer, unsafe.Pointer) bool" {
 							found_unsafe_ptr = true
+							if typ.CStr != "bool (unsafe_Pointer, unsafe_Pointer)" {
+								t.Errorf("Go %s func(unsafe.Pointer, unsafe.Pointer) bool CStr wrong: got %q", v, typ.CStr)
+							}
 						}
-						// pointer param — catches breakage in recursive pointer type reconstruction
-						if !found_ptr && strings.Contains(typ.CStr, "_ptr_") {
+						// func(*os.file) error — complete signature check for pointer param
+						if typ.Str == "func(*os.file) error" {
 							found_ptr = true
+							if typ.CStr != "error (_ptr_os_file)" {
+								t.Errorf("Go %s func(*os.file) error CStr wrong: got %q", v, typ.CStr)
+							}
 						}
 					}
 					if !found_single_return {
