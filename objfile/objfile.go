@@ -723,21 +723,21 @@ func (e *Entry) ParseType_impl(runtimeVersion string, moduleData *ModuleData, ty
 		// Read InCount and OutCount
 		inCountAddr := typeAddress + uint64(_type.baseSize)
 		outCountAddr := typeAddress + uint64(_type.baseSize) + 2 // uint16 = 2 bytes
-		
+
 		inCountData, err := e.raw.read_memory(inCountAddr, 2)
 		if err != nil {
 			(*_type).CStr = "void*"
 			parsedTypesIn.Set(typeAddress, *_type)
 			break
 		}
-		
+
 		outCountData, err := e.raw.read_memory(outCountAddr, 2)
 		if err != nil {
 			(*_type).CStr = "void*"
 			parsedTypesIn.Set(typeAddress, *_type)
 			break
 		}
-		
+
 		var inCount, outCount uint16
 		if littleendian {
 			inCount = binary.LittleEndian.Uint16(inCountData)
@@ -746,11 +746,11 @@ func (e *Entry) ParseType_impl(runtimeVersion string, moduleData *ModuleData, ty
 			inCount = binary.BigEndian.Uint16(inCountData)
 			outCount = binary.BigEndian.Uint16(outCountData)
 		}
-		
+
 		// Check for variadic (top bit of outCount)
 		isVariadic := (outCount & 0x8000) != 0
 		outCount = outCount & 0x7FFF
-		
+
 		// After InCount and OutCount, there's an array of type pointers
 		// Layout: [InCount types...][OutCount types...]
 		//

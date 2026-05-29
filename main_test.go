@@ -70,21 +70,33 @@ func TestAllVersions(t *testing.T) {
 					}
 					found_single_return := false
 					found_multi_return := false
+					found_unsafe_ptr := false
+					found_ptr := false
 					for _, typ := range data.Types {
-						// func([]uint8) (int, error) — single param, multi-return
-						// present naturally from io.Writer usage in fmt
-						if typ.Str == "func([]uint8) (int, error)" && typ.Kind == "Func" {
+						if typ.Kind != "Func" {
+							continue
+						}
+						// multi-return: func([]uint8) (int, error) — from io.Writer
+						if typ.Str == "func([]uint8) (int, error)" {
 							found_single_return = true
 							if typ.CStr != "tuple(int, error) (_slice_uint8)" {
 								t.Errorf("Go %s func([]uint8)(int,error) CStr wrong: got %q", v, typ.CStr)
 							}
 						}
-						// func() (int, bool) — zero params, multi-return
-						if typ.Str == "func() (int, bool)" && typ.Kind == "Func" {
+						// multi-return: func() (int, bool)
+						if typ.Str == "func() (int, bool)" {
 							found_multi_return = true
 							if !strings.Contains(typ.CStr, "tuple(") {
 								t.Errorf("Go %s func()(int,bool) CStr missing tuple: got %q", v, typ.CStr)
 							}
+						}
+						// unsafe.Pointer param — catches breakage in unsafe type reconstruction
+						if !found_unsafe_ptr && strings.Contains(typ.CStr, "unsafe_Pointer") {
+							found_unsafe_ptr = true
+						}
+						// pointer param — catches breakage in recursive pointer type reconstruction
+						if !found_ptr && strings.Contains(typ.CStr, "_ptr_") {
+							found_ptr = true
 						}
 					}
 					if !found_single_return {
@@ -92,6 +104,12 @@ func TestAllVersions(t *testing.T) {
 					}
 					if !found_multi_return {
 						t.Logf("Go %s func()(int,bool) not found (may not exist in this version)", v)
+					}
+					if !found_unsafe_ptr {
+						t.Errorf("Go %s no Func type with unsafe_Pointer in CStr found", v)
+					}
+					if !found_ptr {
+						t.Errorf("Go %s no Func type with _ptr_ in CStr found", v)
 					}
 
 				} else {
