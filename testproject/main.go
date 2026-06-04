@@ -7,6 +7,12 @@ type structurea struct {
 	test string
 }
 
+func add(a, b int) int      { return a + b }
+func multiply(a, b int) int { return a * b }
+
+//go:noinline
+func neverInlined(x int) int { return x * x }
+
 func sum(s []int, c chan int) {
 	sum := 0
 	for _, v := range s {
@@ -35,4 +41,8 @@ func main() {
 
 	x := <-c
 	fmt.Println(x)
+
+	fmt.Println(add(1, 2))
+	fmt.Println(multiply(3, 4))
+	fmt.Println(neverInlined(5))
 }
