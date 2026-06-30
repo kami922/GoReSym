@@ -46,10 +46,16 @@ type StringCandidate struct {
 	Length  uint64 // Length of the string in bytes
 }
 
+// StringEntry is a validated Go string with its virtual address in the binary.
+type StringEntry struct {
+	Str   string `json:"Str"`
+	Start uint64 `json:"Start"`
+}
+
 // ExtractStrings finds embedded Go strings in the binary by analyzing the
-// string internment table. Returns deduplicated, validated strings.
-func (f *File) ExtractStrings() ([]string, error) {
-	var allStrings []string
+// string internment table. Returns deduplicated, validated strings with their start VAs.
+func (f *File) ExtractStrings() ([]StringEntry, error) {
+	var allStrings []StringEntry
 
 	for _, entry := range f.entries {
 		strings, err := entry.extractStrings()
@@ -67,7 +73,7 @@ func (f *File) ExtractStrings() ([]string, error) {
 // This is the main orchestration function, following the FLOSS algorithm:
 //
 //	FLOSS: get_string_blob_strings() in extract.py:266
-func (e *Entry) extractStrings() ([]string, error) {
+func (e *Entry) extractStrings() ([]StringEntry, error) {
 	is64bit := e.is64Bit()
 	isLittleEndian := e.isLittleEndian()
 
@@ -128,7 +134,7 @@ func (e *Entry) extractStrings() ([]string, error) {
 	}
 
 	if len(allCandidates) == 0 {
-		return []string{}, nil
+		return []StringEntry{}, nil
 	}
 
 	// ---------------------------------------------------------------
@@ -154,7 +160,7 @@ func (e *Entry) extractStrings() ([]string, error) {
 	// entries long, far longer than any random run.
 	runStart, runEnd := findLongestMonotonicRun(allCandidates)
 	if runStart == -1 || runEnd == -1 {
-		return []string{}, nil
+		return []StringEntry{}, nil
 	}
 
 	// ---------------------------------------------------------------
@@ -167,7 +173,7 @@ func (e *Entry) extractStrings() ([]string, error) {
 	// null sequences before and after to delimit the blob.
 	blobStart, blobEnd, blobData := findStringBlobRange(allCandidates, runStart, runEnd, dataSections)
 	if blobData == nil {
-		return []string{}, nil
+		return []StringEntry{}, nil
 	}
 
 	// ---------------------------------------------------------------
@@ -184,7 +190,7 @@ func (e *Entry) extractStrings() ([]string, error) {
 	// The blob boundary still serves its purpose: only candidates whose
 	// pointer falls within the blob are considered (filtering noise).
 	seen := make(map[string]bool)
-	var result []string
+	var result []StringEntry
 
 	for _, c := range allCandidates {
 		// Only consider candidates pointing into the blob
@@ -222,7 +228,7 @@ func (e *Entry) extractStrings() ([]string, error) {
 		}
 		seen[s] = true
 
-		result = append(result, s)
+		result = append(result, StringEntry{Str: s, Start: c.Pointer})
 	}
 
 	return result, nil

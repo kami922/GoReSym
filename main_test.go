@@ -396,11 +396,14 @@ func TestStringExtraction(t *testing.T) {
 				t.Errorf("Expected at least %d strings from %s, got %d", tc.minStrings, tc.description, len(data.Strings))
 			}
 
-			// Check that all extracted strings are printable
+			// Check that all extracted strings are printable and have a non-zero start address
 			nonPrintableCount := 0
-			for _, str := range data.Strings {
-				if !isPrintable(str) {
+			for _, entry := range data.Strings {
+				if !isPrintable(entry.Str) {
 					nonPrintableCount++
+				}
+				if entry.Start == 0 {
+					t.Errorf("String %q has zero start address in %s", entry.Str, tc.description)
 				}
 			}
 
@@ -415,8 +418,8 @@ func TestStringExtraction(t *testing.T) {
 			expectedSubstrings := []string{"main", "go", "runtime"}
 			foundCount := 0
 			for _, expected := range expectedSubstrings {
-				for _, str := range data.Strings {
-					if strings.Contains(str, expected) {
+				for _, entry := range data.Strings {
+					if strings.Contains(entry.Str, expected) {
 						foundCount++
 						break
 					}
