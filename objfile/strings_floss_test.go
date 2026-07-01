@@ -52,7 +52,7 @@ func TestExtractStrings_CompareWithFLOSS(t *testing.T) {
 	// Convert to set
 	goresymSet := make(map[string]bool)
 	for _, s := range goresymStrings {
-		goresymSet[s] = true
+		goresymSet[s.Str] = true
 	}
 
 	// Calculate overlap

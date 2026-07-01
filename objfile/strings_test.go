@@ -135,8 +135,8 @@ func TestExtractStrings_MinLength(t *testing.T) {
 
 	// All strings must be >= 4 characters (MIN_STRING_LENGTH)
 	for _, s := range strings {
-		if len(s) < 4 {
-			t.Errorf("Found string shorter than 4 chars: %q (len=%d)", s, len(s))
+		if len(s.Str) < 4 {
+			t.Errorf("Found string shorter than 4 chars: %q (len=%d)", s.Str, len(s.Str))
 		}
 	}
 }
@@ -329,11 +329,11 @@ func TestFindStringCandidates(t *testing.T) {
 }
 
 // Helper function to check if expected strings are present
-func assertStringsPresent(t *testing.T, strings []string, expected []string) {
+func assertStringsPresent(t *testing.T, entries []StringEntry, expected []string) {
 	t.Helper()
 	stringSet := make(map[string]bool)
-	for _, s := range strings {
-		stringSet[s] = true
+	for _, e := range entries {
+		stringSet[e.Str] = true
 	}
 
 	for _, exp := range expected {
