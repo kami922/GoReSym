@@ -199,6 +199,37 @@ func TestAllVersions(t *testing.T) {
 					}
 				}
 
+				// --- Struct field Tag recovery tests ---
+				if v != "15" && v != "16" {
+					found_tagged := false
+					for _, typ := range data.Types {
+						if typ.Str == "main.TaggedStruct" && typ.Kind == "Struct" {
+							found_tagged = true
+							if !strings.Contains(typ.Reconstructed, `json:"id"`) {
+								t.Errorf("Go %s exported field tag json:id missing in TaggedStruct", v)
+							}
+							if !strings.Contains(typ.Reconstructed, `db:"user_id"`) {
+								t.Errorf("Go %s multi-tag db:user_id missing in TaggedStruct", v)
+							}
+							if !strings.Contains(typ.Reconstructed, `json:"name"`) {
+								t.Errorf("Go %s exported field tag json:name missing in TaggedStruct", v)
+							}
+							if !strings.Contains(typ.Reconstructed, `json:"password"`) {
+								t.Errorf("Go %s unexported field tag json:password missing in TaggedStruct", v)
+							}
+							if strings.Contains(typ.Reconstructed, "Active`") || strings.Contains(typ.Reconstructed, "`Active") {
+								t.Errorf("Go %s Active field has spurious backtick in TaggedStruct", v)
+							}
+							if strings.Contains(typ.Reconstructed, "``") {
+								t.Errorf("Go %s empty backtick pair in TaggedStruct Reconstructed", v)
+							}
+						}
+					}
+					if !found_tagged {
+						t.Errorf("Go %s TaggedStruct not found in types", v)
+					}
+				}
+
 				if len(data.StdFunctions) == 0 {
 					t.Errorf("Go %s std functions failed on %s: %s", v, file, err)
 				}
@@ -430,11 +461,14 @@ func TestStringExtraction(t *testing.T) {
 				t.Errorf("Expected at least %d strings from %s, got %d", tc.minStrings, tc.description, len(data.Strings))
 			}
 
-			// Check that all extracted strings are printable
+			// Check that all extracted strings are printable and have a non-zero start address
 			nonPrintableCount := 0
-			for _, str := range data.Strings {
-				if !isPrintable(str) {
+			for _, entry := range data.Strings {
+				if !isPrintable(entry.Str) {
 					nonPrintableCount++
+				}
+				if entry.Start == 0 {
+					t.Errorf("String %q has zero start address in %s", entry.Str, tc.description)
 				}
 			}
 
@@ -449,8 +483,8 @@ func TestStringExtraction(t *testing.T) {
 			expectedSubstrings := []string{"main", "go", "runtime"}
 			foundCount := 0
 			for _, expected := range expectedSubstrings {
-				for _, str := range data.Strings {
-					if strings.Contains(str, expected) {
+				for _, entry := range data.Strings {
+					if strings.Contains(entry.Str, expected) {
 						foundCount++
 						break
 					}

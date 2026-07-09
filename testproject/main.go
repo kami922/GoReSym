@@ -6,8 +6,11 @@ import (
 	"os"
 )
 
-type structurea struct {
-	test string
+type TaggedStruct struct {
+	ID       uint64 `json:"id" db:"user_id"`
+	Name     string `json:"name"`
+	password string `json:"password"`
+	Active   bool
 }
 
 func add(a, b int) int      { return a + b }
@@ -25,10 +28,13 @@ func sum(s []int, c chan int) {
 }
 
 func main() {
-	var structa structurea
-	structa.test = "hi"
+	var Ts TaggedStruct
+	Ts.ID = 1234
+	Ts.Name = "test"
+	Ts.password = "password"
+	Ts.Active = true
 
-	fmt.Println(structa)
+	fmt.Println(Ts)
 
 	c := make(chan int)
 	s := []int{7, 2, 8, 9}

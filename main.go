@@ -71,7 +71,7 @@ type ExtractMetadata struct {
 	Files         []string
 	UserFunctions []FuncMetadata
 	StdFunctions  []FuncMetadata
-	Strings       []string
+	Strings       []objfile.StringEntry
 }
 
 func main_impl_tmpfile(fileBytes []byte, printStdPkgs bool, printFilePaths bool, printTypes bool, noPrintFunctions bool, manualTypeAddress int, versionOverride string, printStrings bool) (metadata ExtractMetadata, err error) {
@@ -395,8 +395,8 @@ func printForHuman(metadata ExtractMetadata) {
 
 	fmt.Println("\n-Strings-")
 	if len(metadata.Strings) > 0 {
-		for _, str := range metadata.Strings {
-			fmt.Println(str)
+		for _, s := range metadata.Strings {
+			fmt.Printf("0x%x %s\n", s.Start, s.Str)
 		}
 	} else {
 		fmt.Println("<NO STRINGS EXTRACTED>")
