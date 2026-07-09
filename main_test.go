@@ -126,13 +126,20 @@ func TestAllVersions(t *testing.T) {
 								t.Errorf("Go %s main.main expected inlined functions, got none", v)
 							}
 							found_add := false
+							found_multiply := false
 							for _, inl := range fn.InlinedList {
 								if inl.Funcname == "main.add" {
 									found_add = true
 								}
+								if inl.Funcname == "main.multiply" {
+									found_multiply = true
+								}
 							}
 							if !found_add {
 								t.Errorf("Go %s main.add not found in main.main InlinedList", v)
+							}
+							if !found_multiply {
+								t.Errorf("Go %s main.multiply not found in main.main InlinedList", v)
 							}
 							if len(fn.InlinedList) < 2 {
 								t.Errorf("Go %s main.main expected >= 2 inlines, got %d", v, len(fn.InlinedList))

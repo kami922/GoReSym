@@ -1,7 +1,10 @@
 /*Copyright (C) 2022 Mandiant, Inc. All Rights Reserved.*/
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 type structurea struct {
 	test string
@@ -42,7 +45,8 @@ func main() {
 	x := <-c
 	fmt.Println(x)
 
-	fmt.Println(add(1, 2))
-	fmt.Println(multiply(3, 4))
+	n := len(os.Args)
+	fmt.Println(add(n, 2))
+	fmt.Println(multiply(n, 4))
 	fmt.Println(neverInlined(5))
 }
